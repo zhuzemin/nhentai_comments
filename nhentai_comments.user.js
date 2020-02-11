@@ -1,13 +1,14 @@
-﻿// ==UserScript==
-// @name        nhentai Comments
+// ==UserScript==
+// @name        nhentai show comments
 // @namespace   nhentai_comments
 // @supportURL  https://github.com/zhuzemin
-// @description nHentai 显示评论(E-hentai)
+// @description nHentai show comment(Comment from Exhentai)
 // @include     https://nhentai.net/g/*
 // @include     https://en.nyahentai3.com/g/*
 // @include     https://zh.nyahentai.co/g/*
 // @include     https://ja.nyahentai.net/g/*
-// @version     1.0
+// @include     https://zh.nyahentai.pro/g/*
+// @version     1.1
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -18,9 +19,10 @@
 // @license     CC Attribution-ShareAlike 4.0 International; http://creativecommons.org/licenses/by-sa/4.0/
 // @connect-src e-hentai.org
 // @connect-src exhentai.org
+// @connect-src proud-surf-e590.zhuzemin.workers.dev
 // ==/UserScript==
 var config = {
-    'debug': false
+    'debug': true
 }
 var debug = config.debug ? console.log.bind(console)  : function () {
 };
@@ -49,6 +51,19 @@ class Exhentai{
         this.charset = 'text/plain;charset=utf8';
     }
 }
+class CloudFlare{
+    constructor(keyword) {
+        this.method = 'GET';
+        this.url = "https://proud-surf-e590.zhuzemin.workers.dev/ajax/https://exhentai.org/?f_doujinshi=1&f_manga=1&f_artistcg=1&f_gamecg=1&f_western=1&f_non-h=1&f_imageset=1&f_cosplay=1&f_asianporn=1&f_misc=1&f_search="+keyword+"&f_apply=Apply+Filter&advsearch=";
+        this.headers = {
+            'User-agent': 'Mozilla/4.0 (compatible) Greasemonkey',
+            'Accept': 'application/atom+xml,application/xml,text/xml',
+            'Referer': window.location.href,
+        };
+        this.charset = 'text/plain;charset=utf8';
+    }
+}
+
 class Gallery{
     constructor(href) {
         this.method = 'GET';
@@ -63,20 +78,22 @@ class Gallery{
 }
 var exhentai;
 var e_hentai;
+var cloudFlareUrl='https://proud-surf-e590.zhuzemin.workers.dev/ajax/';
 var init = function () {
     //setInterval(function(){
     var info = document.querySelector('#info');
     var title=info.querySelector("h1").innerText;
-    exhentai=new Exhentai(title);
-    e_hentai=new E_hentai(title);
+    //exhentai=new Exhentai(title);
+    //e_hentai=new E_hentai(title);
+    cloudflare=new CloudFlare(title);
     debug("init");
-    request(exhentai,SearchGallery);
+    request(cloudflare,SearchGallery);
     //}, 2000)
 }
 
 function SearchGallery(responseDetails) {
     var responseText=responseDetails.responseText;
-    if(responseText.length<2){
+    if(responseText.length<200){
         request(e_hentai,SearchGallery);
         return;
     }
@@ -85,7 +102,7 @@ function SearchGallery(responseDetails) {
     /*var dom = new DOMParser().parseFromString(responseText, "text/html");
     var div = dom.getElementsByClassName('itg')[0];
     var href = div.querySelector('a').href;*/
-    var gallery = new Gallery(href);
+    var gallery = new Gallery(cloudFlareUrl+href);
     debug("SearchGallery");
     request(gallery,GetComments);
 }
