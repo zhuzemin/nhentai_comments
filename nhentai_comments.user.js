@@ -8,7 +8,7 @@
 // @include     https://zh.nyahentai.co/g/*
 // @include     https://ja.nyahentai.net/g/*
 // @include     https://zh.nyahentai.pro/g/*
-// @version     1.1
+// @version     1.11
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -22,7 +22,7 @@
 // @connect-src proud-surf-e590.zhuzemin.workers.dev
 // ==/UserScript==
 var config = {
-    'debug': true
+    'debug': false
 }
 var debug = config.debug ? console.log.bind(console)  : function () {
 };
@@ -83,19 +83,24 @@ var init = function () {
     //setInterval(function(){
     var info = document.querySelector('#info');
     var title=info.querySelector("h1").innerText;
-    //exhentai=new Exhentai(title);
-    //e_hentai=new E_hentai(title);
+    exhentai=new Exhentai(title);
+    e_hentai=new E_hentai(title);
     cloudflare=new CloudFlare(title);
     debug("init");
-    request(cloudflare,SearchGallery);
+    request(exhentai,SearchGallery);
     //}, 2000)
 }
 
 function SearchGallery(responseDetails) {
     var responseText=responseDetails.responseText;
-    if(responseText.length<200){
+    if(responseText.length<200||responseDetails.finalUrl.includes('.workers.dev')){
+        request(cloudflare,SearchGallery);
+        return;
+    }
+    else if(responseText.length<200&&responseDetails.finalUrl.includes('.workers.dev')){
         request(e_hentai,SearchGallery);
         return;
+
     }
     var href=responseText.match(/(https:\/\/e(-|x)hentai\.org\/g\/[\d\w]*\/[\d\w]*\/)/)[1];
     debug("href: "+href);
